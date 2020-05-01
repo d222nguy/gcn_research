@@ -76,32 +76,30 @@ def sp_square(adj):
     adj2 = adj2.tocoo()
     return adj2 #sp.csr_matrix.dot(adj_csr, adj_csr)
 
-def sp_second_tied_prev(adj): # This version contains self-loop and equal weights of 1st-tied and 2nd-tied connections
+def sp_second_tied_prev(adj_coo): # This version contains self-loop and equal weights of 1st-tied and 2nd-tied connections
     '''Input: adj in COO format; Output: adj second_tied in COO format'''
-    rows, cols = adj.nonzero()
-    N = adj.shape[0]
-    adj = [set() for i in range(N)] #adjacency list initialization
+    rows, cols = adj_coo.nonzero()
+    N = adj_coo.shape[0]
+    adj_list = [set() for i in range(N)] #adjacency list initialization
     for i in range(len(rows)):
-        adj[rows[i]].add(cols[i])
-        adj[cols[i]].add(rows[i])
- #   print(adj)
-    new_adj = adj.copy()
-    #new adjacency matrix: if (i, j) then new neighbors of i = old neighbors union neighbors of j
-    for i in range(len(adj)):
-        for j in adj[i]:
-            new_adj[i] = new_adj[i].union(adj[j])
+        adj_list[rows[i]].add(cols[i])
+        adj_list[cols[i]].add(rows[i])
+    new_adj_list = adj_list.copy()
+    #new adjacency matrix: if (i, j) then new neighbors of i = old neighbors of i union neighbors of j
+    for i in range(len(adj_list)):
+        for j in adj_list[i]:
+            new_adj_list[i] = new_adj_list[i].union(adj_list[j])
     #construct resulting matrix from new adjacency list
     new_rows = []
     new_cols = []
-    for i in range(len(new_adj)):
-        for j in new_adj[i]:
+    for i in range(len(new_adj_list)):
+        for j in new_adj_list[i]:
             new_rows.append(i)
             new_cols.append(j)
     data = [1 for i in range(len(new_cols))]
-    b = sp.coo_matrix((data, (new_rows, new_cols)), shape = (N, N)) 
- #   print(b.toarray())
-    return b
-
+    new_adj_coo = sp.coo_matrix((data, (new_rows, new_cols)), shape = (N, N)) 
+    return new_adj_coo
+    
 def sp_second_tied(adj): # This version contains no self-loop, weight = 1 for 1st-tied connection, weight = 0.5 for 2nd-tied connections
     '''Input: adj in COO format; Output: adj second_tied in COO format'''
 
@@ -163,3 +161,12 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     values = torch.from_numpy(sparse_mx.data)
     shape = torch.Size(sparse_mx.shape)
     return torch.sparse.FloatTensor(indices, values, shape)
+def main():
+    row = [0, 1, 2]
+    col = [1, 0, 2]
+    data = [1, 1, 1]
+    A = sp.coo_matrix((data, (row, col)))
+    B = sp_square(A)
+    print(B.toarray())
+if __name__ == '__main__':
+    main()

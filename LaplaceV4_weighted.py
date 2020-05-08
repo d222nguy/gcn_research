@@ -26,14 +26,20 @@ def run_ford_bellman(src, adj, cost, K):
     #Auxilary space: O(|V|)
     global N
     d = [float('inf') for i in range(N)]
+    nb = []
     d[src] = 0
     for k in range(K): #modify K
+        d_ = d.copy()
         for i in range(N):
             for j in range(len(adj[i])):
                 u = adj[i][j]
-                if d[i] > d[u] + cost[i][j]:
-                    d[i] = d[u] + cost[i][j]
-    return d
+                if d_[i] > d[u] + cost[i][j]:
+                    d_[i] = d[u] + cost[i][j]
+        d = d_.copy()
+    for i in range(N):
+        if d[i] < float('inf'):
+            nb.append(i)
+    return d, nb
 def calculate_dist(adj, cost, K):
     #Calculate distance matrix dist, by calculating d(i) for every vertex v
     #Input: adj list, cost list, K
@@ -42,11 +48,15 @@ def calculate_dist(adj, cost, K):
     #Auxilary space: O(|V|^2)
     global N
     dist = []
+    N = len(adj)
+    print(N)
+    neighbors = []
     for i in range(N):
-        d = run_ford_bellman(i, adj, cost, K)
+        d, nb = run_ford_bellman(i, adj, cost, K)
         dist.append(d)
+        neighbors.append(nb)
     dist = np.array(dist)
-    return dist
+    return dist, neighbors
 
 def main():
     '''driver code to test the method'''
@@ -58,11 +68,20 @@ def main():
     A = sp.coo_matrix((data, (rows, cols)), shape = (7, 7))
     #print(A[0, 0])
     adj_list, cost_list = construct_adj_list(A)
+    print('=======================K = 1======================')
     K = 1
-    dist = calculate_dist(adj_list, cost_list, K)
-    print(dist) #Notice: dist[0, 3] == 4
+    dist, neighbors = calculate_dist(adj_list, cost_list, K)
+    print('dist = ', dist) #Notice: dist[0, 3] == 4,
+    print('neighbors = ', neighbors)
+    print('=======================K = 2======================')
     K = 2
-    dist = calculate_dist(adj_list, cost_list, K)
-    print(dist) #Notice: dist[0, 3] == 3
+    dist, neighbors = calculate_dist(adj_list, cost_list, K)
+    print('dist = ', dist) #Notice: dist[0, 3] == 3, dist[3, 2] = 5 (3->0->2)
+    print('neighbors = ', neighbors)
+    print('=======================K = 3======================')
+    K = 3
+    dist, neighbors = calculate_dist(adj_list, cost_list, K)
+    print('dist = ', dist) #Notice: dist[0, 3] == 3, dist[3, 2] = 4 (3->4->0->2)
+    print('neighbors = ', neighbors)
 if __name__ == "__main__":
     main()

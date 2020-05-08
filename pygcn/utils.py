@@ -16,7 +16,7 @@ def encode_onehot(labels):
 
 
 #def load_data(path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'data/cora/'), dataset="cora"):
-def load_data(path = os.path.join(os.getcwd(),'pygcn/data/cora/'), dataset="cora"):
+def load_data(path = os.path.join(os.getcwd(),'../data/cora/'), dataset="cora"):
 
     ## Replace path = "../data/cora/" by the absolute path: 
     ## path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'data/cora/')

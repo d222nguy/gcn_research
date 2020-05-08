@@ -18,8 +18,8 @@ def construct_adj_list(A_):
     print(cost_list)
     return adj_list, cost_list
 def run_ford_bellman(src, adj, cost, K):
-    #Run Ford-Bellman with relaxation k times.
-    #this way we can guarantee that eveyr shortest distance has at most K edges!
+    #Run Ford-Bellman with relaxation K times.
+    #this way we can guarantee that every shortest paths has at most K edges!
     #Input: source vertex, adj list, cost (weight) list, and K
     #Output: shortest distance from source to every vertex
     #Time complexity: O(K * |E|)
@@ -60,9 +60,9 @@ def main():
     adj_list, cost_list = construct_adj_list(A)
     K = 1
     dist = calculate_dist(adj_list, cost_list, K)
-    print(dist) #Notice: dist[0, 3]
+    print(dist) #Notice: dist[0, 3] == 4
     K = 2
     dist = calculate_dist(adj_list, cost_list, K)
-    print(dist) #Notice: dist[0, 3]
+    print(dist) #Notice: dist[0, 3] == 3
 if __name__ == "__main__":
     main()

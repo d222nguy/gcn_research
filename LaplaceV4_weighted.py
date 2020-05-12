@@ -40,6 +40,23 @@ def run_ford_bellman(src, adj, cost, K):
         if d[i] < float('inf'):
             nb.append(i)
     return d, nb
+def compute_neighbors(neighbors, dist, h):
+    '''Given neighbors and dist as list of list, compute avg and new_neighbors'''
+    avg = [-1 for i in range(N)]
+    for i in range(N):
+        sum_ = 0
+        for j in neighbors[i]:
+            sum_ = sum_ + dist[i][j]
+        #since sum_ and neighbors contain self-loop, avg[i] = (sum_)/(len(neighbros[i]) - 1)
+        avg[i] = sum_ / (len(neighbors[i]) - 1)
+    new_neighbors = [[] for i in range(N)]
+    for i in range(N):
+        for j in neighbors[i]:
+            if abs(dist[i][j] - avg[i]) <= h:
+                new_neighbors[i].append(j)
+    #Note: new_neighbors contain self-loops!
+    return avg, new_neighbors
+
 def calculate_dist(adj, cost, K):
     #Calculate distance matrix dist, by calculating d(i) for every vertex v
     #Input: adj list, cost list, K
@@ -56,7 +73,10 @@ def calculate_dist(adj, cost, K):
         dist.append(d)
         neighbors.append(nb)
     dist = np.array(dist)
-    return dist, neighbors
+
+    #Compute new neighborhoods:
+    avg, new_neighbors = compute_neighbors(neighbors, dist, 3.0)
+    return dist, neighbors, avg, new_neighbors
 
 def main():
     '''driver code to test the method'''
@@ -70,18 +90,24 @@ def main():
     adj_list, cost_list = construct_adj_list(A)
     print('=======================K = 1======================')
     K = 1
-    dist, neighbors = calculate_dist(adj_list, cost_list, K)
+    dist, neighbors, avg, new_neighbors = calculate_dist(adj_list, cost_list, K)
     print('dist = ', dist) #Notice: dist[0, 3] == 4,
     print('neighbors = ', neighbors)
+    print('avg = ', avg)
+    print('new neighbors = ', new_neighbors)
     print('=======================K = 2======================')
     K = 2
-    dist, neighbors = calculate_dist(adj_list, cost_list, K)
+    dist, neighbors, avg, new_neighbors = calculate_dist(adj_list, cost_list, K)
     print('dist = ', dist) #Notice: dist[0, 3] == 3, dist[3, 2] = 5 (3->0->2)
     print('neighbors = ', neighbors)
+    print('avg = ', avg)
+    print('new neighbors = ', new_neighbors)
     print('=======================K = 3======================')
     K = 3
-    dist, neighbors = calculate_dist(adj_list, cost_list, K)
+    dist, neighbors, avg, new_neighbors = calculate_dist(adj_list, cost_list, K)
     print('dist = ', dist) #Notice: dist[0, 3] == 3, dist[3, 2] = 4 (3->4->0->2)
     print('neighbors = ', neighbors)
+    print('avg = ', avg)
+    print('new neighbors = ', new_neighbors)
 if __name__ == "__main__":
     main()

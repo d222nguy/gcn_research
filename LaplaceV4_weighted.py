@@ -40,6 +40,31 @@ def run_ford_bellman(src, adj, cost, K):
         if d[i] < float('inf'):
             nb.append(i)
     return d, nb
+def run_ford_bellman_2(src, adj, cost, K):
+    global N
+    d = [float('inf') for i in range(N)]
+    nb = []
+    d[src] = 0
+    s = set([i for i in range(N)]) #set of vertices which are not reachable yet
+    s.remove(src)
+    for k in range(K):
+        d_ = d.copy()
+        remove_lst = []
+        for i in s: #if i is not reachable yet, continue finding paths
+            for j in range(len(adj[i])):
+                u = adj[i][j]
+                if d_[i] > d[u] + cost[i][j]:
+                    d_[i] = d[u] + cost[i][j]
+            if d_[i] < float('inf'):
+                remove_lst.append(i)  #if i becomes reachable, add it to the remove list 
+        for i in remove_lst:
+            s.remove(i)
+        d = d_.copy()
+    for i in range(N):
+        if d[i] < float('inf'):
+            nb.append(i)
+    return d, nb
+
 def compute_neighbors(neighbors, dist, h):
     '''Given neighbors and dist as list of list, compute avg and new_neighbors'''
     avg = [-1 for i in range(N)]
@@ -69,7 +94,7 @@ def calculate_dist(adj, cost, K):
     print(N)
     neighbors = []
     for i in range(N):
-        d, nb = run_ford_bellman(i, adj, cost, K)
+        d, nb = run_ford_bellman_2(i, adj, cost, K)
         dist.append(d)
         neighbors.append(nb)
     dist = np.array(dist)

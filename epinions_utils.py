@@ -4,11 +4,14 @@ import numpy as np
 from collections import OrderedDict, defaultdict
 from scipy import spatial
 from sklearn.metrics.pairwise import cosine_similarity as cosine
-def cosine(x,y):
-    return np.inner(x,y)/np.sqrt(np.dot(x,x)*np.dot(y,y))
+import config as cf
+
 import random
 params = {} #global parameters of dataset, shared among funcitons
+def cosine(x,y):
+    return np.inner(x,y)/np.sqrt(np.dot(x,x)*np.dot(y,y))
 def load_data(fileName):
+    '''Load data and build basic data blocks'''
     rate, rated = defaultdict(list), defaultdict(list)
     #rate: rate[u] = {v_1, .., v_k} means user u rate product v_1,..,v_k
     #rated: rated[v] = {u_1, .., u_k} means product v is rated by u_1,..,u_k
@@ -32,20 +35,18 @@ def load_data(fileName):
     print(n_users, n_products, n_ratings)
     return rate, rated, ratings, user_to_idx, idx_to_user
 def build_adj(rated, user_to_idx, idx_to_user):
+    '''Build ajacency matrix'''
     n_users = params["n_users"]
     adj = [{} for _ in range(n_users)]
     k = 0
-    CAP = 10000
     for product in rated:
         k += 1
         if k % 200 == 0: 
             print("Product {0} / {1}".format(k, len(rated)))
         for i in range(len(rated[product])):
             u = user_to_idx[rated[product][i]]
-            if u > CAP: continue
             for j in range(i + 1, len(rated[product])):
                 v = user_to_idx[rated[product][j]]
-                if v > CAP: continue
                 #print(u, v)
                 adj[u][v] = 1 
                 adj[v][u] = 1
@@ -60,12 +61,12 @@ def build_adj(rated, user_to_idx, idx_to_user):
     #     f.close()
     return adj
 def build_weight(rate, adj, user_to_idx, idx_to_user, ratings):
+    '''Do some tests, and compute cosine weights'''
     print("user_to_idx[1] = ", user_to_idx[1])
     print("idx_to_user[0] = ", idx_to_user[0])
     print("Rating list of user 1, rate[1] = ", rate[user_to_idx[1]])
     print("Rating list of user 18157, rate[user_to_idx[18157]] = ", rate[user_to_idx[18157]])
     print("Rating list of user 48524, rate[user_to_idx[48524]] = ", rate[user_to_idx[48524]])
-    # rate_set = [0 for i in range(len(rate))]
     rate_set = [0 for i in range(len(rate))]
     for i in rate:
         rate_set[i] = set(rate[i])
@@ -73,8 +74,7 @@ def build_weight(rate, adj, user_to_idx, idx_to_user, ratings):
     print("Rating set of user 18157, rate[user_to_idx[18157]] = ", rate_set[user_to_idx[18157]])
     print("Rating set of user 48524, rate[user_to_idx[48524]] = ", rate_set[user_to_idx[48524]])
     weight = [{} for _ in range(len(adj))]
-    CAP = 10000
-    for u in range(min(CAP, len(adj))):
+    for u in range(len(adj)):
         if u % 1000 == 0:
             print("User {0}/{1}".format(u, len(adj)))
         for v in adj[u]:
@@ -95,17 +95,34 @@ def build_weight(rate, adj, user_to_idx, idx_to_user, ratings):
     print(adj[1788][6897])
     print(weight[6897][1788])
     #save weight matrix to file, to save computation time (~8mins using NumPy cosine, ~20mins using scipy cosine)
-    with open('weight.txt', "w+") as f:
-        for i in range(min(CAP, len(adj))):
+    with open(cf.weight_fn, "w+") as f:
+        for i in range(len(adj)):
             print("User {0}/ {1}".format(i, len(adj)))
             for v in adj[i]:
                 if v < i:
                     f.writelines(str(i) + " " + str(v) + " " + str(weight[i][v])  + "\n")
         f.close()
     return weight
+def load_weight():
+    '''Load precomputed weight from file: weight.txt'''
+    weight = [{} for _ in range(params["n_users"])]
+    with open(cf.weight_fn, 'r') as f:
+        for line in f:
+            u, v, w = list(map(float, line.split()))
+            u, v = int(u), int(v)
+            weight[u][v] = w 
+            weight[v][u] = w 
+    print(weight[6897][1788])
+    print(weight[1162][37593])
+    return weight
+
 def main():
     rate, rated, ratings, user_to_idx, idx_to_user = load_data('ratings_data')
-    adj = build_adj(rated, user_to_idx, idx_to_user)
-    weight = build_weight(rate, adj, user_to_idx, idx_to_user, ratings)
+    #first time run: Uncomment next two lines!
+    if cf.first_time_run:
+        adj = build_adj(rated, user_to_idx, idx_to_user)
+        weight = build_weight(rate, adj, user_to_idx, idx_to_user, ratings)
+    else:
+        weight = load_weight()
 if __name__ == "__main__":
     main()

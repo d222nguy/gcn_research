@@ -1,6 +1,12 @@
 import networkx as nx 
 import pandas as pd 
+import numpy as np
 from collections import OrderedDict, defaultdict
+from scipy import spatial
+from sklearn.metrics.pairwise import cosine_similarity as cosine
+# from libc.math cimport sqrt
+def cosine(x,y):
+    return np.inner(x,y)/np.sqrt(np.dot(x,x)*np.dot(y,y))
 import random
 params = {} #global parameters of dataset, shared among funcitons
 def load_data(fileName):
@@ -20,7 +26,7 @@ def load_data(fileName):
                 i += 1
             rate[user_to_idx[user]].append(product)
             rated[product].append(user)
-            ratings[(user, product)] = rating
+            ratings[(user_to_idx[user], product)] = rating
     params["n_users"] = n_users = len(rate)
     params["n_products"] = n_products = len(rated)
     params["n_ratings"] = n_ratings = len(ratings)
@@ -39,11 +45,19 @@ def build_adj(rated, user_to_idx, idx_to_user):
             for j in range(i + 1, len(rated[product])):
                 v = user_to_idx[rated[product][j]]
                 #print(u, v)
-                adj[u - 1][v - 1] = 1 #move to 0-index
-                adj[v - 1][u - 1] = 1
+                adj[u][v] = 1 
+                adj[v][u] = 1
     print(adj[0])
+
+    #save adj matrix to file, to save File I/O time (Take too much time, file size ~1Gb)
+    # with open('adj.txt', "w+") as f:
+    #     for i in range(len(adj)):
+    #         print("User {0}/ {1}".format(i, len(adj)))
+    #         for v in adj[i]:
+    #             f.writelines(str(i) + " " + str(v) + "\n")
+    #     f.close()
     return adj
-def build_weight(rate, adj, user_to_idx, idx_to_user):
+def build_weight(rate, adj, user_to_idx, idx_to_user, ratings):
     print("user_to_idx[1] = ", user_to_idx[1])
     print("idx_to_user[0] = ", idx_to_user[0])
     print("Rating list of user 1, rate[1] = ", rate[user_to_idx[1]])
@@ -56,23 +70,30 @@ def build_weight(rate, adj, user_to_idx, idx_to_user):
     print("Rating set of user 1, rate[user_to_idx[0]] = ", rate_set[user_to_idx[1]])
     print("Rating set of user 18157, rate[user_to_idx[18157]] = ", rate_set[user_to_idx[18157]])
     print("Rating set of user 48524, rate[user_to_idx[48524]] = ", rate_set[user_to_idx[48524]])
+    weight = [{} for _ in range(len(adj))]
     for u in range(len(adj)):
+        if u % 1000 == 0:
+            print("User {0}/{1}".format(u, len(adj)))
         for v in adj[u]:
+            if v < u:
+                continue
             mutual_set = rate_set[u].intersection(rate_set[v])
-            if len(mutual_set) > 10 and random.random() < 0.0001:
-                print(u, v, idx_to_user[u], idx_to_user[v], mutual_set)
-    # rate_set = [set(rate[i]) for i in rate]
-    # print("Rate set of user 0: -------------------------------------------------------------------------------------------->")
-    # print(rate[0])
-    # print("Rate set of user 1: -------------------------------------------------------------------------------------------->")
-    # print(rate[1])
-    # for u in adj:
-    #     for v in adj[u]:
-    #         mutual_product = rate_set[u].intersection(rate_set[v])
-    #         print(mutual_product)
+            vector_u, vector_v = np.zeros(len(mutual_set)), np.zeros(len(mutual_set))
+            for i, ele in enumerate(mutual_set):
+                # print(u, v, ele)
+                vector_u[i] = ratings[(u, ele)]
+                vector_v[i] = ratings[(v, ele)]
+            weight[u][v] = cosine(vector_u, vector_v)
+            weight[v][u] = weight[u][v]
+            if u == 1788 and v == 6897:
+                print(vector_u, vector_v)
+            # if len(mutual_set) > 10 and random.random() < 0.0001:
+            #     print(u, v, idx_to_user[u], idx_to_user[v], mutual_set)
+    print(adj[1788][6897])
+    print(weight[6897][1788])
 def main():
     rate, rated, ratings, user_to_idx, idx_to_user = load_data('ratings_data')
     adj = build_adj(rated, user_to_idx, idx_to_user)
-    weight = build_weight(rate, adj, user_to_idx, idx_to_user)
+    weight = build_weight(rate, adj, user_to_idx, idx_to_user, ratings)
 if __name__ == "__main__":
     main()

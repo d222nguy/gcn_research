@@ -4,7 +4,7 @@ import numpy as np
 from collections import OrderedDict, defaultdict
 from scipy import spatial
 from sklearn.metrics.pairwise import cosine_similarity as cosine
-import config as cf
+# import config as cf
 
 import random
 params = {} #global parameters of dataset, shared among funcitons
@@ -29,6 +29,10 @@ def load_data(fileName):
             rate[user_to_idx[user]].append(product)
             rated[product].append(user)
             ratings[(user_to_idx[user], product)] = rating
+    maxlen = 0
+    for p in rated:
+        maxlen = max(maxlen, len(rated[p]))
+    print(maxlen)
     params["n_users"] = n_users = len(rate)
     params["n_products"] = n_products = len(rated)
     params["n_ratings"] = n_ratings = len(ratings)
@@ -95,7 +99,7 @@ def build_weight(rate, adj, user_to_idx, idx_to_user, ratings):
     print(adj[1788][6897])
     print(weight[6897][1788])
     #save weight matrix to file, to save computation time (~8mins using NumPy cosine, ~20mins using scipy cosine)
-    with open(cf.weight_fn, "w+") as f:
+    with open("weight.txt", "w+") as f:
         for i in range(len(adj)):
             print("User {0}/ {1}".format(i, len(adj)))
             for v in adj[i]:
@@ -106,7 +110,7 @@ def build_weight(rate, adj, user_to_idx, idx_to_user, ratings):
 def load_weight():
     '''Load precomputed weight from file: weight.txt'''
     weight = [{} for _ in range(params["n_users"])]
-    with open(cf.weight_fn, 'r') as f:
+    with open("weight.txt", 'r') as f:
         for line in f:
             u, v, w = list(map(float, line.split()))
             u, v = int(u), int(v)
@@ -119,10 +123,10 @@ def load_weight():
 def main():
     rate, rated, ratings, user_to_idx, idx_to_user = load_data('ratings_data')
     #first time run: Uncomment next two lines!
-    if cf.first_time_run:
-        adj = build_adj(rated, user_to_idx, idx_to_user)
-        weight = build_weight(rate, adj, user_to_idx, idx_to_user, ratings)
-    else:
-        weight = load_weight()
+    # if cf.first_time_run:
+    #     adj = build_adj(rated, user_to_idx, idx_to_user)
+    #     weight = build_weight(rate, adj, user_to_idx, idx_to_user, ratings)
+    # else:
+    #     weight = load_weight()
 if __name__ == "__main__":
     main()
